@@ -93,8 +93,10 @@ body {
 /* Main Content */
 .main-content {
     margin-left: 260px;
-    padding: 100px 30px 30px;
+    padding: 90px 30px 30px !important; /* 140px ensures enough space */
     min-height: 100vh;
+    position: relative;
+    z-index: 1; 
 }
 
 /* Cards */
@@ -165,4 +167,183 @@ body {
 
 .sidebar .border-top {
     margin-top: auto;
+}
+
+/* ===========================================
+   Stunning Professional User Table Styling
+   =========================================== */
+
+.user-table-card {
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 3px 15px rgba(0,0,0,0.08);
+    background: #fff;
+}
+
+/* Table spacing */
+table.dataTable tbody tr {
+    height: 65px;
+}
+
+table.dataTable tbody tr td {
+    padding-top: 18px !important;
+    padding-bottom: 18px !important;
+    font-size: 0.92rem;
+    color: #313131;
+}
+
+/* Zebra shading */
+table.dataTable tbody tr:nth-child(even) {
+    background: #fafafa;
+}
+
+/* Hover */
+table.dataTable tbody tr:hover {
+    background: #eef3fb !important;
+}
+
+/* Table header */
+table.dataTable thead th {
+    background: var(--navy) !important;
+    color: #fff !important;
+    padding: 14px;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    border-bottom: none;
+}
+
+/* Name cell with stronger typography */
+.table-username {
+    font-weight: 600;
+    font-size: 1rem;
+    color: var(--dark-navy);
+}
+
+/* Designation badge */
+.badge-role {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.badge-lawyer {
+    background: #007bff22;
+    color: #0055aa;
+}
+
+.badge-principal {
+    background: #f0ad4e22;
+    color: #b07800;
+}
+
+.badge-hoc {
+    background: #28a74522;
+    color: #1d7e34;
+}
+
+/* Status chips */
+.status-chip {
+    border-radius: 12px;
+    padding: 4px 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.status-active {
+    background: #dff5e1;
+    color: #188c28;
+}
+
+.status-inactive {
+    background: #e6e6e6;
+    color: #555;
+}
+
+/* ==============================
+   Action Buttons — Mini Icons
+   ============================== */
+
+.action-btn {
+    border: none;
+    border-radius: 8px;
+    width: 34px;
+    height: 34px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 6px;
+    transition: 0.2s;
+    color: white;
+}
+
+.action-edit {
+    background: var(--navy);
+}
+.action-edit:hover {
+    background: #062045;
+}
+
+.action-status {
+    background: var(--gold);
+}
+.action-status:hover {
+    background: #a8861d;
+}
+
+.action-reset {
+    background: #343a40;
+}
+.action-reset:hover {
+    background: #1e2124;
+}
+
+.action-delete {
+    background: #c62828;
+}
+.action-delete:hover {
+    background: #a30d0d;
+}
+
+/* Clean rounded modal */
+.modal-content {
+    border-radius: 14px !important;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+}
+
+.modal-header {
+    padding: 18px 25px;
+}
+
+.modal-body {
+    padding: 25px;
+}
+
+.modal-body label {
+    font-weight: 600;
+    margin-bottom: 6px;
+}
+
+.modal-footer {
+    padding: 15px 25px;
+}
+
+/* Input aesthetics */
+.form-control,
+.form-select {
+    padding: 11px 12px;
+    border-radius: 10px;
+    border: 1px solid #d8dce2;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: var(--gold);
+    box-shadow: 0 0 4px rgba(201,162,39,0.4);
+}
+
+
+.card-header {
+    background: linear-gradient(90deg, #0A2D5C, #C9A227) !important;
+    color: white !important;
 }
