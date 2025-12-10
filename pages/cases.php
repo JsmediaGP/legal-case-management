@@ -18,6 +18,18 @@ $pdo = db();
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+
+
+    
+
     <style>
         .btn-navy { background:#0A2D5C; color:white; border:none; }
         .btn-gold { background:#C9A227; color:white; font-weight:600; }
@@ -52,13 +64,31 @@ $pdo = db();
                 </thead>
                 <tbody>
                 <?php
-                $cases = $pdo->query("
+                // $cases = $pdo->query("
+                //     SELECT c.*, u.first_name, u.last_name,
+                //     (SELECT COUNT(*) FROM case_documents d WHERE d.case_id = c.case_id) AS doc_count
+                //     FROM cases c
+                //     LEFT JOIN users u ON c.assigned_lawyer_id = u.id
+                //     ORDER BY c.created_at DESC
+                // ")->fetchAll();
+                $userId = $user['id'];
+                // Everyone (lawyer, principal, head) sees ALL cases,
+                // but their assigned cases appear at the top.
+                $stmt = $pdo->prepare("
                     SELECT c.*, u.first_name, u.last_name,
                     (SELECT COUNT(*) FROM case_documents d WHERE d.case_id = c.case_id) AS doc_count
                     FROM cases c
                     LEFT JOIN users u ON c.assigned_lawyer_id = u.id
-                    ORDER BY c.created_at DESC
-                ")->fetchAll();
+                    ORDER BY 
+                        (CASE WHEN c.assigned_lawyer_id = ? THEN 0 ELSE 1 END),
+                        c.created_at DESC
+                ");
+                $stmt->execute([$userId]);
+
+                $cases = $stmt->fetchAll();
+
+
+                
 
                 foreach ($cases as $c):
                     $caseJson = htmlspecialchars(json_encode($c), ENT_QUOTES, 'UTF-8');
@@ -72,11 +102,29 @@ $pdo = db();
                         <td><?= $c['next_hearing'] ? date('d M Y', strtotime($c['next_hearing'])) : '—' ?></td>
                         <td><span class="badge bg-success"><?= (int)$c['doc_count'] ?></span></td>
                         <td>
-                            <button class="btn btn-sm btn-info view-btn me-1" data-id="<?= (int)$c['case_id'] ?>">View</button>
-                            <button class="btn btn-sm btn-warning edit-btn me-1" data-case='<?= $caseJson ?>'>Update</button>
-                            <?php if (Auth::isHeadOfChamber()): ?>
-                                <button class="btn btn-sm btn-danger delete-btn" data-id="<?= (int)$c['case_id'] ?>">Delete</button>
+                            <?php
+                            $canUpdate = Auth::isHeadOfChamber() || ($user['id'] == $c['assigned_lawyer_id']);
+                            ?>
+
+                            <button class="btn btn-sm btn-info view-btn me-1"
+                                    data-id="<?= (int)$c['case_id'] ?>">
+                                View
+                            </button>
+
+                            <?php if ($canUpdate): ?>
+                                <button class="btn btn-sm btn-warning edit-btn me-1"
+                                        data-case='<?= $caseJson ?>'>
+                                    Update
+                                </button>
                             <?php endif; ?>
+
+                            <?php if (Auth::isHeadOfChamber()): ?>
+                                <button class="btn btn-sm btn-danger delete-btn"
+                                        data-id="<?= (int)$c['case_id'] ?>">
+                                    Delete
+                                </button>
+                            <?php endif; ?>
+
                         </td>
                     </tr>
                 <?php endforeach; ?>
