@@ -47,6 +47,80 @@ $pdo = db();
 </div>
 
 <div class="main-content p-3">
+        <div class="card p-3 mb-3 shadow-sm border-0">
+        <h5 class="mb-3 fw-bold text-navy">Filter Cases</h5>
+
+        <div class="row g-3">
+
+            <!-- Case Number -->
+            <div class="col-md-3">
+                <label class="form-label fw-semibold">Case Number</label>
+                <input type="text" id="filter_case_no" class="form-control" placeholder="Search case number">
+            </div>
+
+            <!-- Category -->
+            <div class="col-md-3">
+                <label class="form-label fw-semibold">Category</label>
+                <select id="filter_category" class="form-select">
+                    <option value="">All</option>
+                    <option value="civil">Civil</option>
+                    <option value="criminal">Criminal</option>
+                    <option value="family">Family</option>
+                    <option value="corporate">Corporate</option>
+                    <option value="land">Land Dispute</option>
+                </select>
+            </div>
+
+            <!-- Status -->
+            <div class="col-md-3">
+                <label class="form-label fw-semibold">Status</label>
+                <select id="filter_status" class="form-select">
+                    <option value="">All</option>
+                    <option value="pre-litigation">Pre-litigation</option>
+                    <option value="in court">In Court</option>
+                    <option value="adjourned">Adjourned</option>
+                    <option value="closed">Closed</option>
+                </select>
+            </div>
+
+            <!-- Assigned Lawyer -->
+            <div class="col-md-3">
+                <label class="form-label fw-semibold">Assigned Lawyer</label>
+                <input type="text" id="filter_lawyer" class="form-control" placeholder="Enter lawyer name">
+            </div>
+
+            <!-- Date Range -->
+            <div class="col-md-3">
+                <label class="form-label fw-semibold">Next Hearing (From)</label>
+                <input type="date" id="filter_date_from" class="form-control">
+            </div>
+
+            <div class="col-md-3">
+                <label class="form-label fw-semibold">Next Hearing (To)</label>
+                <input type="date" id="filter_date_to" class="form-control">
+            </div>
+
+            <!-- My Cases Toggle -->
+            <div class="col-md-3">
+                <label class="form-label fw-semibold">My Cases Only</label>
+                <div class="form-check form-switch mt-2">
+                    <input class="form-check-input" type="checkbox" id="filter_my_cases">
+                    <label class="form-check-label">Show only cases assigned to me</label>
+                    <input type="hidden" id="logged_in_user" value="<?= $user['id'] ?>">
+                </div>
+            </div>
+            <div class="row mt-3">
+            <div class="col-md-3" id="dt_length_container"></div>
+            <div class="col-md-3" id="dt_search_container"></div>
+            <div class="col-md-3">
+                <button id="reset_filters" class="btn btn-secondary w-100">Reset Filters</button>
+            </div>
+        </div>
+
+
+        </div>
+    </div>
+
     <div class="card shadow border-0">
         <div class="card-body p-0">
             <table id="casesTable" class="table table-hover mb-0">
@@ -60,17 +134,12 @@ $pdo = db();
                         <th>Next Hearing</th>
                         <th>Files</th>
                         <th>Actions</th>
+                        <th style="display:none;">LawyerID</th> 
                     </tr>
                 </thead>
                 <tbody>
                 <?php
-                // $cases = $pdo->query("
-                //     SELECT c.*, u.first_name, u.last_name,
-                //     (SELECT COUNT(*) FROM case_documents d WHERE d.case_id = c.case_id) AS doc_count
-                //     FROM cases c
-                //     LEFT JOIN users u ON c.assigned_lawyer_id = u.id
-                //     ORDER BY c.created_at DESC
-                // ")->fetchAll();
+               
                 $userId = $user['id'];
                 // Everyone (lawyer, principal, head) sees ALL cases,
                 // but their assigned cases appear at the top.
@@ -101,6 +170,9 @@ $pdo = db();
                         <td><span class="badge bg-warning text-dark"><?= htmlspecialchars(ucwords(str_replace('-',' ',$c['current_status']))) ?></span></td>
                         <td><?= $c['next_hearing'] ? date('d M Y', strtotime($c['next_hearing'])) : '—' ?></td>
                         <td><span class="badge bg-success"><?= (int)$c['doc_count'] ?></span></td>
+                        
+
+
                         <td>
                             <?php
                             $canUpdate = Auth::isHeadOfChamber() || ($user['id'] == $c['assigned_lawyer_id']);
@@ -126,6 +198,7 @@ $pdo = db();
                             <?php endif; ?>
 
                         </td>
+                        <td style="display:none;"><?= (int)$c['assigned_lawyer_id'] ?></td>
                     </tr>
                 <?php endforeach; ?>
                 </tbody>
@@ -330,7 +403,105 @@ $pdo = db();
 <script>
 $(function(){
 
-    $('#casesTable').DataTable({ pageLength: 10 });
+     let table = $('#casesTable').DataTable({
+         pageLength: 10,
+       
+    });
+
+        /* ----------------------------
+        COLUMN FILTERING 
+        ---------------------------- */
+
+        // Case Number
+        $('#filter_case_no').on('keyup', function () {
+            table.column(0).search(this.value).draw();
+        });
+
+        // Category
+        $('#filter_category').on('change', function () {
+            const filterValue = this.value === "all" ? "" : this.value;
+            table.column(2).search(filterValue).draw();
+        });
+
+        // Status
+        $('#filter_status').on('change', function () {
+            const filterValue = this.value === "all" ? "" : this.value;
+            table.column(4).search(filterValue).draw();
+        });
+
+        // Lawyer Name
+        $('#filter_lawyer').on('keyup', function () {
+            table.column(3).search(this.value).draw();
+        });
+
+        /* ----------------------------
+            MY CASES ONLY FILTER
+            (Uses hidden LawyerID column index 8)
+        ---------------------------- */
+
+        $('#filter_my_cases').on('change', function () {
+            let userId = $('#logged_in_user').val();
+
+            if (this.checked) {
+                table.column(8).search("^" + userId + "$", true, false).draw();
+            } else {
+                table.column(8).search("").draw();
+            }
+        });
+
+        /* ----------------------------
+            DATE RANGE FILTER
+            Using Next Hearing (column 5)
+        ---------------------------- */
+
+        $.fn.dataTable.ext.search.push(function (settings, data) {
+
+            let min = $('#filter_date_from').val();
+            let max = $('#filter_date_to').val();
+            let target = data[5]; // Next hearing column
+
+            if (!min && !max) return true;
+
+            if (target === '—' || !target) return false;
+
+            let hearingDate = new Date(target);
+            let minDate = min ? new Date(min) : null;
+            let maxDate = max ? new Date(max) : null;
+
+            if (minDate && hearingDate < minDate) return false;
+            if (maxDate && hearingDate > maxDate) return false;
+
+            return true;
+        });
+
+        $('#filter_date_from, #filter_date_to').on('change', function () {
+            table.draw();
+        });
+
+        /* ----------------------------
+            RESET ALL FILTERS
+        ---------------------------- */
+
+        $('#reset_filters').on('click', function () {
+
+            $('#filter_case_no').val('');
+            $('#filter_category').val('all');
+            $('#filter_status').val('all');
+            $('#filter_lawyer').val('');
+            $('#filter_date_from').val('');
+            $('#filter_date_to').val('');
+            $('#filter_my_cases').prop('checked', false);
+
+            // Reset all DataTables searches
+            table.search("");
+            table.columns().search("");
+
+            table.draw();
+        });
+
+    
+
+
 
     const billingMap = { civil:150000, criminal:250000, family:120000, corporate:750000, land:350000 };
 
