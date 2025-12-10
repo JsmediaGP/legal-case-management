@@ -185,6 +185,50 @@ ini_set('display_errors', 1);
     </div>
 </div>
 
+<!-- VIEW CASE MODAL -->
+<div class="modal fade" id="viewCaseModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content border-0 shadow">
+
+            <div class="modal-header bg-navy text-white">
+                <h5 class="modal-title fw-bold">Case Details</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+
+                <div id="view_loader" class="text-center py-4 d-none">
+                    <div class="spinner-border text-primary"></div>
+                </div>
+
+                <div id="view_content" class="d-none">
+
+                    <h5 class="text-navy fw-bold mb-3" id="v_case_number"></h5>
+
+                    <p><strong>Category:</strong> <span id="v_category"></span></p>
+                    <p><strong>Complainants:</strong> <span id="v_complainants"></span></p>
+                    <p><strong>Respondents:</strong> <span id="v_respondents"></span></p>
+                    <p><strong>Description:</strong> <span id="v_description"></span></p>
+                    <p><strong>Petition Date:</strong> <span id="v_petition_date"></span></p>
+                    <p><strong>Next Hearing:</strong> <span id="v_next_hearing"></span></p>
+                    <p><strong>Assigned Lawyer:</strong> <span id="v_lawyer"></span></p>
+                    <p><strong>Billing:</strong> ₦<span id="v_billing"></span></p>
+                    <p><strong>Status:</strong> <span id="v_status"></span></p>
+
+                    <hr>
+
+                    <h6 class="fw-bold">Case Files</h6>
+                    <div id="v_files"></div>
+
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
@@ -193,6 +237,63 @@ ini_set('display_errors', 1);
 <script>
 $(document).ready(function() {
 
+    // VIEW CASE DETAILS
+$('.view-btn').click(function() {
+    const caseId = $(this).data('id');
+
+    $('#view_loader').removeClass('d-none');
+    $('#view_content').addClass('d-none');
+    $('#viewCaseModal').modal('show');
+
+    $.post('../engine/core/CaseHandler.php', 
+        { action: 'view', case_id: caseId }, 
+        function(response) {
+
+            let res = JSON.parse(response);
+
+            if (!res.success) {
+                Swal.fire("Error", "Unable to load case", "error");
+                return;
+            }
+
+            const c = res.case;
+
+            $('#v_case_number').text(c.case_number);
+            $('#v_category').text(c.category);
+            $('#v_complainants').text(c.complainants);
+            $('#v_respondents').text(c.respondents);
+            $('#v_description').text(c.description || '—');
+            $('#v_petition_date').text(c.petition_date || '—');
+            $('#v_next_hearing').text(c.next_hearing || '—');
+            $('#v_lawyer').text(c.first_name ? c.first_name + ' ' + c.last_name : '—');
+            $('#v_billing').text(Number(c.billing_amount).toLocaleString());
+            $('#v_status').text(c.current_status);
+
+            // FILES
+            let filesHTML = "";
+            if (res.files.length === 0) {
+                filesHTML = "<p>No files uploaded.</p>";
+            } else {
+                res.files.forEach(f => {
+                    filesHTML += `
+                        <div class="p-2 border rounded mb-2 d-flex justify-content-between">
+                            <span>${f.file_name}</span>
+                            <a href="../${f.file_path}" target="_blank" class="btn btn-sm btn-primary">
+                                View / Download
+                            </a>
+                        </div>
+                    `;
+                });
+            }
+            $('#v_files').html(filesHTML);
+
+            $('#view_loader').addClass('d-none');
+            $('#view_content').removeClass('d-none');
+    });
+});
+
+
+    //create case data table
     $('#casesTable').DataTable({ pageLength: 10 });
 
     const billingMap = { 

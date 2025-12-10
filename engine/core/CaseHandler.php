@@ -124,6 +124,36 @@ if ($_POST['action'] === 'create') {
     exit();
 }
 
+// ==============================
+// VIEW CASE DETAILS
+// ==============================
+if ($_POST['action'] === 'view') {
+
+    $case_id = $_POST['case_id'];
+
+    $stmt = $pdo->prepare("
+        SELECT c.*, u.first_name, u.last_name 
+        FROM cases c 
+        LEFT JOIN users u ON c.assigned_lawyer_id = u.id
+        WHERE c.case_id = ?
+    ");
+    $stmt->execute([$case_id]);
+    $case = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    // Fetch files
+    $files = $pdo->prepare("SELECT * FROM case_documents WHERE case_id = ?");
+    $files->execute([$case_id]);
+    $files = $files->fetchAll(PDO::FETCH_ASSOC);
+
+    echo json_encode([
+        'success' => true,
+        'case' => $case,
+        'files' => $files
+    ]);
+    exit();
+}
+
+
 
 // UPDATE CASE
 
